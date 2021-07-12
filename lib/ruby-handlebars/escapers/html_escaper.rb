@@ -1,6 +1,6 @@
 require 'cgi'
 
-module Handlebars
+module RubyHandlebars
   module Escapers
     class HTMLEscaper
       def self.escape(value)
