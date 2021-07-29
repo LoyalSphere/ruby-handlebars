@@ -51,6 +51,14 @@ describe RubyHandlebars::Handlebars do
       expect(evaluate('Hello {{first-name}}', double("first-name": 'world'))).to eq('Hello world')
     end
 
+    it 'handles inline else if' do
+      expect(evaluate('{{#if key1}}one{{else if key2}}two{{/if}}', double(key1: '1'))).to eq('one')
+      expect(evaluate('{{#if key1}}one{{else if key2}}two{{/if}}', double(key2: '2'))).to eq('two')
+      expect(evaluate('{{#if key1}}one{{else if key2}}two{{else}}three{{/if}}', double(key2: '2'))).to eq('two')
+      expect(evaluate('{{#if key1}}one{{else if key2}}two{{else if key3}}three{{/if}}', double(key3: '3'))).to eq('three')
+      expect(evaluate('{{#if key1}}one{{else if key2}}two{{else if key3}}three{{else}}four{{/if}}', double(key4: '3'))).to eq('four')
+    end
+
     context 'partials' do
       it 'simple' do
         hbs.register_partial('plic', "Plic")
@@ -71,7 +79,7 @@ describe RubyHandlebars::Handlebars do
         hbs.register_partial('brackets', "[{{name}}]")
         expect(evaluate("Hello {{> brackets}}", {name: 'world'})).to eq("Hello [world]")
       end
-      
+
       it 'with a string argument' do
         hbs.register_partial('with_args', "[{{name}}]")
         expect(evaluate("Hello {{> with_args name='jon'}}")).to eq("Hello [jon]")
@@ -180,6 +188,37 @@ describe RubyHandlebars::Handlebars do
 
       it '"else" can be part of a path' do
         expect(evaluate('My {{ something.else }} template', { something: { else: 'awesome' }})).to eq('My awesome template')
+      end
+
+
+      it 'handles inline else if' do
+        expect(evaluate('{{#if key1}}one{{else if key2}}two{{/if}}', double(key1: '1'))).to eq('one')
+        expect(evaluate('{{#if key1}}one{{else if key2}}two{{/if}}', double(key2: '2'))).to eq('two')
+        expect(evaluate('{{#if key1}}one{{else if key2}}two{{else if key3}}three{{/if}}', double(key3: '3'))).to eq('three')
+        expect(evaluate('{{#if key1}}one{{else if key2}}two{{else if key3}}three{{else}}four{{/if}}', double(key4: '3'))).to eq('four')
+      end
+
+      context 'else helper block' do
+        before do
+          hbs.register_helper(:if_eq) do |context, a, b, block, else_block|
+            if a == b
+              block.fn(context)
+            else
+              else_block.fn(context) if else_block
+            end
+          end
+        end
+
+        it 'helper with else helper' do
+          expect(evaluate("{{#if_eq value '1'}}one{{else if_eq value '2'}}two{{/if_eq}}", double(value: '1'))).to eq('one')
+          expect(evaluate("{{#if_eq value '1'}}one{{else if_eq value '2'}}two{{/if_eq}}", double(value: '2'))).to eq('two')
+          expect(evaluate("{{#if_eq value '1'}}one{{else if_eq value '2'}}two{{else}}else{{/if_eq}}", double(value: '1'))).to eq('one')
+          expect(evaluate("{{#if_eq value '1'}}one{{else if_eq value '2'}}two{{else}}else{{/if_eq}}", double(value: '2'))).to eq('two')
+          expect(evaluate("{{#if_eq value '1'}}one{{else if_eq value '2'}}two{{else}}else{{/if_eq}}", double(value: '3'))).to eq('else')
+          expect(evaluate("{{#if_eq value '1'}}one{{else if_eq value '2'}}two{{else if_eq value '3'}}three{{/if_eq}}", double(value: '3'))).to eq('three')
+          expect(evaluate("{{#if_eq value '1'}}one{{else if_eq value '2'}}two{{else if_eq value '3'}}three{{else}}else{{/if_eq}}", double(value: '4'))).to eq('else')
+          expect { evaluate("{{#if key1}}one{{else if_eq value '2'}}two{{/if}}", double(value: '1', key1: true)) }.to raise_error
+        end
       end
     end
 

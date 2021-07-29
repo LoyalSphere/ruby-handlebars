@@ -27,6 +27,7 @@ describe RubyHandlebars::Helpers::IfHelper do
       include_context "shared apply helper"
       let(:params) { false }
       let(:else_block) { nil }
+      let(:elsif_block) { nil }
 
       it 'returns an empty-string' do
         expect(subject.apply(ctx, params, block, else_block)).to eq("")
